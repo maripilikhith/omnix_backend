@@ -1,0 +1,5 @@
+export const AUTH_CONSTANTS = Object.freeze({
+  MIN_PASSWORD_LENGTH: 8,
+  MAX_LOGIN_ATTEMPTS: 5,
+  LOCK_DURATION_MINUTES: 30,
+});

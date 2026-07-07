@@ -1,0 +1,4 @@
+export const TOPIC_CONSTANTS = Object.freeze({
+  MAX_STORIES_PER_TOPIC: 20,
+  MAX_EXPLAINERS_PER_TOPIC: 30,
+});

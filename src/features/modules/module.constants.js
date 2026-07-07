@@ -1,0 +1,4 @@
+export const MODULE_CONSTANTS = Object.freeze({
+  MIN_TOPICS_FOR_QUIZ: 3,
+  MAX_CHECKPOINT_QUESTIONS: 10,
+});
