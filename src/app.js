@@ -10,8 +10,11 @@ import { corsConfig } from './config/cors.config.js';
 // Middleware
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/requestLogger.js';
+import { requestId } from './middleware/requestId.js';
 import { createRateLimiter } from './middleware/rateLimiter.js';
 import { sanitize } from './middleware/sanitize.js';
+import { authenticate } from './middleware/authenticate.js';
+import { authorize } from './middleware/authorize.js';
 
 // Feature routes
 import { healthRoutes } from './features/health/index.js';
@@ -48,6 +51,9 @@ import { NotFoundError } from './utils/ApiError.js';
 const app = express();
 
 // ─── Global Middleware Stack ──────────────────────────────────────────────────
+
+// Request ID — must be first so every log line has a correlation ID
+app.use(requestId);
 
 // Security headers
 app.use(helmet());
@@ -125,8 +131,11 @@ legacyPublic.get('/courses/:courseSlug', catchAsync(async (req, res) => {
 app.use('/api/public', legacyPublic);
 app.use('/api/ai', aiRoutes);
 
-// Legacy admin routes
+// Legacy admin routes — protected: requires a valid JWT with admin role
 const legacyAdmin = express.Router();
+
+// Apply authentication + authorization to every route in this router
+legacyAdmin.use(authenticate, authorize('admin'));
 
 legacyAdmin.get('/courses', catchAsync(courseController.legacyListAll));
 legacyAdmin.post('/courses', catchAsync(courseController.legacyCreate));

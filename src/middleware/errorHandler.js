@@ -74,6 +74,8 @@ export const errorHandler = (err, _req, res, _next) => {
       message,
       statusCode,
       ...(errors.length > 0 && { errors }),
+      // Include request ID so users can report it to support
+      requestId: _req.requestId,
       // Include stack trace only in development
       ...(config.app.isDev && err.stack && { stack: err.stack }),
     },
