@@ -30,6 +30,7 @@ import { assessmentRoutes } from './features/assessments/index.js';
 import { analyticsRoutes } from './features/analytics/index.js';
 import { adminRoutes } from './features/admin/index.js';
 import { aiRoutes } from './features/ai/index.js';
+import { gameRoutes, gameController } from './features/games/index.js';
 
 // Legacy controllers (for frontend backward compat)
 import { courseController } from './features/courses/course.controller.js';
@@ -55,8 +56,17 @@ const app = express();
 // Request ID — must be first so every log line has a correlation ID
 app.use(requestId);
 
-// Security headers
-app.use(helmet());
+// Security headers — frameguard & CORP disabled so frontend can embed game iframes
+app.use(
+  helmet({
+    frameguard: false,
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    contentSecurityPolicy: false,
+    hsts: false,
+  }),
+);
 
 // CORS
 app.use(cors(corsConfig));
@@ -99,6 +109,7 @@ app.use('/api/v1/assessments', assessmentRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/games', gameRoutes);
 
 // ─── Legacy Compatibility Routes ──────────────────────────────────────────────
 // These match the EXACT paths and response shapes of the existing server/
@@ -114,19 +125,22 @@ legacyPublic.get('/courses', catchAsync(courseController.legacyListPublished));
 legacyPublic.get('/courses/:courseSlug', catchAsync(async (req, res) => {
   const course = await courseService.getCourseBySlug(req.params.courseSlug);
 
-  // Fetch all related data in parallel (replicates old API behavior exactly)
+  // Fetch all related data in parallel with .lean() to improve performance by returning plain JS objects
   const [modules, topics, stories, explainers] = await Promise.all([
-    ModuleModel.find({ courseId: course._id, isPublished: true }).sort({ number: 1 }),
-    TopicModel.find({ courseId: course._id, isPublished: true }).sort({ number: 1 }),
-    StoryModel.find({ courseId: course._id }).sort({ order: 1 }),
-    ExplainerModel.find({ courseId: course._id, isPublished: true }).sort({ order: 1 }),
+    ModuleModel.find({ courseId: course._id, isPublished: true }).sort({ number: 1 }).lean(),
+    TopicModel.find({ courseId: course._id, isPublished: true }).sort({ number: 1 }).lean(),
+    StoryModel.find({ courseId: course._id }).sort({ order: 1 }).lean(),
+    ExplainerModel.find({ courseId: course._id, isPublished: true }).sort({ order: 1 }).lean(),
   ]);
 
-  const obj = course.toObject();
+  const obj = typeof course.toObject === 'function' ? course.toObject() : course;
   obj.slug = obj.courseSlug;
 
   return ApiResponse.raw(res, { ...obj, modules, topics, stories, explainers });
 }));
+
+legacyPublic.get('/games', catchAsync(gameController.legacyListPublished));
+legacyPublic.get('/games/:gameId/play', catchAsync(gameController.legacyPlay));
 
 app.use('/api/public', legacyPublic);
 app.use('/api/ai', aiRoutes);
@@ -161,6 +175,11 @@ legacyAdmin.get('/explainers', catchAsync(explainerController.legacyListAll));
 legacyAdmin.post('/explainers', catchAsync(explainerController.legacyCreate));
 legacyAdmin.put('/explainers/:id', catchAsync(explainerController.legacyUpdate));
 legacyAdmin.delete('/explainers/:id', catchAsync(explainerController.legacyRemove));
+
+legacyAdmin.get('/games', catchAsync(gameController.legacyListAll));
+legacyAdmin.post('/games', catchAsync(gameController.legacyCreate));
+legacyAdmin.put('/games/:id', catchAsync(gameController.legacyUpdate));
+legacyAdmin.delete('/games/:id', catchAsync(gameController.legacyRemove));
 
 app.use('/api/admin', legacyAdmin);
 

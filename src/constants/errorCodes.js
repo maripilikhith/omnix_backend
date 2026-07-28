@@ -38,6 +38,10 @@ export const ERROR_CODES = Object.freeze({
   // Explainers
   EXPLAINER_NOT_FOUND: 'EXPLAINER_NOT_FOUND',
 
+  // Games
+  GAME_NOT_FOUND: 'GAME_NOT_FOUND',
+  GAME_ALREADY_EXISTS: 'GAME_ALREADY_EXISTS',
+
   // Users
   USER_NOT_FOUND: 'USER_NOT_FOUND',
 

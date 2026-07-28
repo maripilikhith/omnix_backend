@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0">
+    <title>Vector Crab Angle Puzzle ✈️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0c14;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', 'Source Code Pro', monospace;
+            padding: 10px;
+        }
+        .game-container {
+            background: #12162b;
+            border: 3px solid #2f3b5c;
+            border-radius: 16px;
+            padding: 18px;
+            max-width: 750px;
+            width: 100%;
+            box-shadow: 0 0 30px rgba(0, 100, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #c0d0ff;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #2a3350;
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .title {
+            font-size: 1.2rem;
+            color: #5da9ff;
+            text-shadow: 0 0 8px #1e4b8f;
+        }
+        .level-badge {
+            background: #1f2740;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #080b17;
+            border: 2px solid #2f3b5c;
+            border-radius: 12px;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
+        }
+        .control-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            background: #0f132a;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #2a3350;
+        }
+        .angle-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .angle-input-group label {
+            color: #a0b8ff;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        input[type="range"] {
+            width: 130px;
+            accent-color: #5da9ff;
+        }
+        .angle-value {
+            background: #000;
+            color: #ffd966;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            min-width: 65px;
+            text-align: center;
+            border: 1px solid #5da9ff;
+        }
+        .btn {
+            background: #1e2745;
+            border: 2px solid #3b4a78;
+            color: #fff;
+            font-family: inherit;
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        .btn:hover {
+            background: #2f3b6b;
+            border-color: #5da9ff;
+            box-shadow: 0 0 12px #1e3b6b;
+        }
+        .btn.launch {
+            background: #2a4a3a;
+            border-color: #4da86b;
+            color: #b0ffc0;
+            font-size: 1rem;
+            padding: 12px 24px;
+        }
+        .btn.launch:hover {
+            background: #3b6b4e;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #b0c6ff;
+            font-size: 0.85rem;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .wind-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #00000033;
+            padding: 4px 12px;
+            border-radius: 8px;
+        }
+        .thrust-display {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #00000033;
+            padding: 4px 12px;
+            border-radius: 8px;
+        }
+        .message {
+            color: #ffd966;
+            text-align: center;
+            font-weight: bold;
+            min-height: 1.5em;
+            letter-spacing: 0.5px;
+        }
+        .hint-text {
+            color: #99aacc;
+            font-size: 0.8rem;
+            text-align: center;
+            border-top: 1px dashed #2a3350;
+            padding-top: 8px;
+            min-height: 1.4em;
+        }
+        @media (max-width: 500px) {
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="header">
+        <span class="title">✈️ VECTOR CRAB PUZZLE</span>
+        <span class="level-badge" id="levelDisplay">LEVEL 1 / 3</span>
+    </div>
+
+    <canvas id="gameCanvas" width="700" height="450" aria-label="Pixel flight simulation canvas"></canvas>
+
+    <div class="info-panel">
+        <div class="wind-display">
+            <span>💨 WIND:</span>
+            <span id="windInfo">→ 0.0 px/f</span>
+        </div>
+        <div class="thrust-display">
+            <span>🚀 THRUST:</span>
+            <span id="thrustInfo">3.5 px/f @ 0°</span>
+        </div>
+    </div>
+
+    <div class="control-row">
+        <div class="angle-input-group">
+            <label>🧭 CRAB ANGLE:</label>
+            <input type="range" id="angleSlider" min="-80" max="80" value="0" step="0.5">
+            <span class="angle-value" id="angleValue">0°</span>
+        </div>
+        <button class="btn launch" id="btnLaunch">▶ LAUNCH PLANE</button>
+        <button class="btn" id="btnReset">↺ RESET</button>
+        <button class="btn" id="btnHint">💡 HINT</button>
+    </div>
+
+    <div class="message" id="messageArea">Set your crab angle to compensate for wind, then launch!</div>
+    <div class="hint-text" id="hintArea"></div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;
+        const H = canvas.height;
+
+        // UI elements
+        const levelDisplay = document.getElementById('levelDisplay');
+        const windInfo = document.getElementById('windInfo');
+        const thrustInfo = document.getElementById('thrustInfo');
+        const angleSlider = document.getElementById('angleSlider');
+        const angleValue = document.getElementById('angleValue');
+        const messageArea = document.getElementById('messageArea');
+        const hintArea = document.getElementById('hintArea');
+        const btnLaunch = document.getElementById('btnLaunch');
+        const btnReset = document.getElementById('btnReset');
+        const btnHint = document.getElementById('btnHint');
+
+        // ──────────────────────
+        // GAME STATE
+        // ──────────────────────
+        const maxLevel = 3;
+        let currentLevel = 1;
+        let wind = { x: 0, y: 0 };
+        let thrustMagnitude = 3.5;
+        let crabAngleDeg = 0;
+        let crabAngleRad = 0;
+
+        let planeX, planeY;
+        let destinationX, destinationY;
+        let destinationRadius = 24;
+        let planeAngleVisual = 0;
+        let isFlying = false;
+        let flightPath = [];
+        let animationId = null;
+        let frameCounter = 0;
+        let maxFlightFrames = 350;
+        let successProcessed = false;
+        let autoAdvanceTimer = null;
+
+        let hintTimer = null;
+
+        // ──────────────────────
+        // LEVEL DEFINITIONS
+        // ──────────────────────
+        const levels = [
+            {
+                wind: { x: 0, y: 0 },
+                description: "No wind – the plane's nose points straight to the destination.",
+                solutionAngle: 0,
+                hint: "With no crosswind, the ground path equals the thrust direction. Point the nose directly at the target (0°)."
+            },
+            {
+                wind: { x: 2.2, y: 0 },
+                description: "Crosswind blowing to the right. Compensate by pointing left.",
+                solutionAngle: -Math.atan2(2.2, thrustMagnitude) * 180 / Math.PI,
+                hint: "The wind pushes the plane rightwards. To counteract, you must aim the nose to the left (a negative angle). How far left depends on the wind strength."
+            },
+            {
+                wind: { x: 1.8, y: 0.8 },
+                description: "Diagonal wind (right and down). Correct mostly left.",
+                solutionAngle: (() => {
+                    const w = { x: 1.8, y: 0.8 };
+                    const t = thrustMagnitude;
+                    const sinTheta = -w.x / t;
+                    return Math.asin(Math.max(-1, Math.min(1, sinTheta))) * 180 / Math.PI;
+                })(),
+                hint: "Wind blows to the right and slightly downwards. You need a leftward crab angle to cancel the sideways drift. Focus on horizontal cancellation; the vertical wind will slow you down but won't prevent reaching the destination if you aim correctly."
+            }
+        ];
+
+        // ──────────────────────
+        // LOAD LEVEL
+        // ──────────────────────
+        function loadLevel(lvl) {
+            stopFlight();
+            clearAutoAdvance();
+            successProcessed = false;
+            const lvlData = levels[lvl - 1];
+            wind = { ...lvlData.wind };
+            crabAngleDeg = 0;
+            crabAngleRad = 0;
+            angleSlider.value = 0;
+            angleValue.textContent = '0°';
+            planeAngleVisual = 0;
+            isFlying = false;
+            flightPath = [];
+            frameCounter = 0;
+
+            planeX = W / 2;
+            planeY = H - 70;
+            destinationX = W / 2;
+            destinationY = 65;
+
+            updateWindDisplay();
+            updateThrustDisplay();
+            levelDisplay.textContent = `LEVEL ${currentLevel} / ${maxLevel}`;
+            messageArea.textContent = 'Set crab angle and launch!';
+            hintArea.textContent = '';
+            btnLaunch.disabled = false;
+            btnReset.disabled = false;
+            btnHint.disabled = false;
+            drawScene();
+        }
+
+        function updateWindDisplay() {
+            const mag = Math.sqrt(wind.x * wind.x + wind.y * wind.y).toFixed(1);
+            let dir = '';
+            if (Math.abs(wind.x) < 0.05 && Math.abs(wind.y) < 0.05) dir = 'calm';
+            else {
+                if (wind.x > 0.2) dir += '→';
+                else if (wind.x < -0.2) dir += '←';
+                if (wind.y > 0.2) dir += '↓';
+                else if (wind.y < -0.2) dir += '↑';
+            }
+            windInfo.textContent = `${dir} ${mag} px/f`;
+            windInfo.style.color = mag > 2.5 ? '#ffaa66' : '#aaccff';
+        }
+
+        function updateThrustDisplay() {
+            const angle = parseFloat(angleSlider.value).toFixed(1);
+            thrustInfo.textContent = `3.5 px/f @ ${angle}°`;
+        }
+
+        // ──────────────────────
+        // VECTOR MATH
+        // ──────────────────────
+        function computeResultant(angleRad) {
+            const thrustX = Math.sin(angleRad) * thrustMagnitude;
+            const thrustY = -Math.cos(angleRad) * thrustMagnitude;
+            return {
+                x: thrustX + wind.x,
+                y: thrustY + wind.y,
+            };
+        }
+
+        // ──────────────────────
+        // FLIGHT CONTROL
+        // ──────────────────────
+        function startFlight() {
+            if (isFlying) return;
+            crabAngleDeg = parseFloat(angleSlider.value);
+            crabAngleRad = crabAngleDeg * Math.PI / 180;
+            planeAngleVisual = crabAngleRad;
+            planeX = W / 2;
+            planeY = H - 70;
+            flightPath = [{ x: planeX, y: planeY }];
+            frameCounter = 0;
+            isFlying = true;
+            successProcessed = false;
+            messageArea.textContent = 'Flying...';
+            btnLaunch.disabled = true;
+            btnReset.disabled = true;
+            btnHint.disabled = true;
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(flightLoop);
+        }
+
+        function stopFlight() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isFlying = false;
+            btnLaunch.disabled = false;
+            btnReset.disabled = false;
+            btnHint.disabled = false;
+        }
+
+        function flightLoop() {
+            if (!isFlying) return;
+            frameCounter++;
+            const resultant = computeResultant(crabAngleRad);
+            planeX += resultant.x;
+            planeY += resultant.y;
+            flightPath.push({ x: planeX, y: planeY });
+            if (flightPath.length > 500) flightPath.shift();
+
+            drawScene();
+
+            const dx = planeX - destinationX;
+            const dy = planeY - destinationY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < destinationRadius) {
+                isFlying = false;
+                stopFlight();
+                if (!successProcessed && currentLevel <= maxLevel) {
+                    successProcessed = true;
+                    messageArea.textContent = '🛬 PERFECT LANDING! Destination reached.';
+                    hintArea.textContent = 'Excellent! Moving to next level...';
+                    autoAdvanceTimer = setTimeout(() => {
+                        if (currentLevel < maxLevel) {
+                            currentLevel++;
+                            loadLevel(currentLevel);
+                        } else {
+                            messageArea.textContent = '🏆 CONGRATULATIONS! You completed all levels.';
+                            hintArea.textContent = 'You have mastered vector crab angles!';
+                            btnLaunch.disabled = true;
+                        }
+                        autoAdvanceTimer = null;
+                    }, 1800);
+                }
+                drawScene();
+                return;
+            }
+
+            const margin = 30;
+            if (planeX < -margin || planeX > W + margin || planeY < -margin || planeY > H + margin || frameCounter > maxFlightFrames) {
+                isFlying = false;
+                stopFlight();
+                messageArea.textContent = '❌ MISSED! Adjust your crab angle and try again.';
+                hintArea.textContent = 'Observe the wind arrow and think how to cancel its sideways effect.';
+                drawScene();
+                return;
+            }
+
+            animationId = requestAnimationFrame(flightLoop);
+        }
+
+        function resetSimulation() {
+            stopFlight();
+            clearAutoAdvance();
+            successProcessed = false;
+            crabAngleDeg = parseFloat(angleSlider.value);
+            crabAngleRad = crabAngleDeg * Math.PI / 180;
+            planeAngleVisual = crabAngleRad;
+            planeX = W / 2;
+            planeY = H - 70;
+            flightPath = [];
+            messageArea.textContent = 'Ready. Adjust angle and launch.';
+            hintArea.textContent = '';
+            updateThrustDisplay();
+            drawScene();
+        }
+
+        function clearAutoAdvance() {
+            if (autoAdvanceTimer) {
+                clearTimeout(autoAdvanceTimer);
+                autoAdvanceTimer = null;
+            }
+        }
+
+        // ──────────────────────
+        // HINT SYSTEM
+        // ──────────────────────
+        function showHintNow() {
+            const lvl = levels[currentLevel - 1];
+            hintArea.textContent = `💡 ${lvl.hint}`;
+            clearHintTimer();
+            hintTimer = setTimeout(() => {
+                if (!isFlying && !successProcessed) hintArea.textContent = '';
+                hintTimer = null;
+            }, 6000);
+        }
+
+        function clearHintTimer() {
+            if (hintTimer) {
+                clearTimeout(hintTimer);
+                hintTimer = null;
+            }
+        }
+
+        // ──────────────────────
+        // DRAWING (enhanced wind, no legend)
+        // ──────────────────────
+        function drawScene() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#080b17';
+            ctx.fillRect(0, 0, W, H);
+            drawGrid();
+            drawDestination();
+            drawWindParticles();
+            drawWindCompass();   // new: always visible wind direction indicator
+
+            if (flightPath.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(200, 220, 255, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 4]);
+                ctx.moveTo(flightPath[0].x, flightPath[0].y);
+                for (let i = 1; i < flightPath.length; i++) {
+                    ctx.lineTo(flightPath[i].x, flightPath[i].y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            const previewAngle = isFlying ? crabAngleRad : (crabAngleDeg * Math.PI / 180);
+            const resultant = computeResultant(previewAngle);
+            const thrustX = Math.sin(previewAngle) * thrustMagnitude;
+            const thrustY = -Math.cos(previewAngle) * thrustMagnitude;
+            const arrowOriginX = planeX;
+            const arrowOriginY = planeY;
+
+            if (planeX > -20 && planeX < W + 20 && planeY > -20 && planeY < H + 20) {
+                // Enhanced wind arrow (thicker, bright)
+                drawVectorArrow(arrowOriginX, arrowOriginY, wind.x, wind.y, '#ff7744', 'WIND', 3.5);
+                drawVectorArrow(arrowOriginX, arrowOriginY, thrustX, thrustY, '#5da9ff', 'THRUST', 2.5);
+                drawVectorArrow(arrowOriginX, arrowOriginY, resultant.x, resultant.y, '#4ecb71', 'GROUND', 2.5);
+            }
+
+            drawPixelPlane(planeX, planeY, previewAngle);
+            // Legend removed
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(45, 55, 90, 0.4)';
+            ctx.lineWidth = 1;
+            const step = 45;
+            for (let x = step; x < W; x += step) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, H);
+                ctx.stroke();
+            }
+            for (let y = step; y < H; y += step) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(W, y);
+                ctx.stroke();
+            }
+            ctx.strokeStyle = 'rgba(90, 110, 180, 0.5)';
+            ctx.beginPath();
+            ctx.moveTo(W / 2, 0);
+            ctx.lineTo(W / 2, H);
+            ctx.stroke();
+        }
+
+        function drawDestination() {
+            const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.15;
+            const r = destinationRadius * pulse;
+            ctx.fillStyle = '#ffbb33';
+            ctx.beginPath();
+            ctx.arc(destinationX, destinationY, r, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = '#ffdd88';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px "Courier New"';
+            ctx.textAlign = 'center';
+            ctx.fillText('DEST', destinationX, destinationY - r - 10);
+            ctx.fillText('▼', destinationX, destinationY - r - 2);
+        }
+
+        function drawPixelPlane(x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            const scale = 1.2;
+            const ph = 40;
+            ctx.fillStyle = '#8ba0c0';
+            ctx.fillRect(-5 * scale, -ph / 2 * scale, 10 * scale, 8 * scale);
+            ctx.fillStyle = '#5b6e8c';
+            ctx.fillRect(-6 * scale, (-ph / 2 + 8) * scale, 12 * scale, 24 * scale);
+            ctx.fillStyle = '#4a5b78';
+            ctx.fillRect(-8 * scale, (-ph / 2 + 14) * scale, 16 * scale, 6 * scale);
+            ctx.fillStyle = '#ffcc66';
+            ctx.fillRect(-2 * scale, -ph / 2 * scale, 4 * scale, 6 * scale);
+            ctx.fillStyle = '#ddeeff';
+            ctx.fillRect(-1 * scale, (-ph / 2 + 2) * scale, 2 * scale, 3 * scale);
+            ctx.fillStyle = '#6b7e9a';
+            ctx.fillRect(-5 * scale, (ph / 2 - 12) * scale, 10 * scale, 5 * scale);
+            ctx.fillStyle = '#5a6b7e';
+            ctx.fillRect(-3 * scale, (ph / 2 - 16) * scale, 6 * scale, 4 * scale);
+            ctx.restore();
+        }
+
+        function drawVectorArrow(fromX, fromY, vx, vy, color, label, lineWidth = 2.5) {
+            const mag = Math.sqrt(vx * vx + vy * vy);
+            if (mag < 0.05) return;
+            const scale = 18;
+            const endX = fromX + vx * scale;
+            const endY = fromY + vy * scale;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+            const angle = Math.atan2(endY - fromY, endX - fromX);
+            const headLen = 8;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - headLen * Math.cos(angle - 0.6), endY - headLen * Math.sin(angle - 0.6));
+            ctx.lineTo(endX - headLen * Math.cos(angle + 0.6), endY - headLen * Math.sin(angle + 0.6));
+            ctx.closePath();
+            ctx.fill();
+            if (label) {
+                ctx.fillStyle = color;
+                ctx.font = 'bold 10px "Courier New"';
+                ctx.fillText(label, endX + 10 * Math.cos(angle), endY + 10 * Math.sin(angle) - 4);
+            }
+        }
+
+        // Enhanced wind particles – more numerous and bolder
+        function drawWindParticles() {
+            const windMag = Math.sqrt(wind.x * wind.x + wind.y * wind.y);
+            if (windMag < 0.1) return;
+            const windDirX = wind.x / windMag;
+            const windDirY = wind.y / windMag;
+            const count = 25;  // increased from 12
+            ctx.strokeStyle = 'rgba(255, 160, 80, 0.45)';  // brighter
+            ctx.lineWidth = 2;
+            for (let i = 0; i < count; i++) {
+                const offset = (Date.now() * 0.03 + i * 15) % 180;
+                const startX = (Math.random() * W) - windDirX * offset * 0.6;
+                const startY = (Math.random() * H) - windDirY * offset * 0.6;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(startX + windDirX * 24, startY + windDirY * 24);
+                ctx.stroke();
+            }
+        }
+
+        // Wind compass in top-left corner – large, unmistakable
+        function drawWindCompass() {
+            const compX = 65;
+            const compY = 55;
+            const radius = 28;
+            // Outer circle
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(compX, compY, radius, 0, 2 * Math.PI);
+            ctx.stroke();
+            // Cardinal points
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px "Courier New"';
+            ctx.textAlign = 'center';
+            ctx.fillText('N', compX, compY - radius - 6);
+            ctx.fillText('S', compX, compY + radius + 14);
+            ctx.fillText('E', compX + radius + 12, compY + 4);
+            ctx.fillText('W', compX - radius - 12, compY + 4);
+            // Wind arrow from center
+            const windMag = Math.sqrt(wind.x * wind.x + wind.y * wind.y);
+            if (windMag > 0.05) {
+                const normX = wind.x / windMag;
+                const normY = wind.y / windMag;
+                const arrowLen = radius * 0.8;
+                ctx.strokeStyle = '#ffaa33';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(compX, compY);
+                ctx.lineTo(compX + normX * arrowLen, compY + normY * arrowLen);
+                ctx.stroke();
+                // arrowhead
+                const tipX = compX + normX * arrowLen;
+                const tipY = compY + normY * arrowLen;
+                const angle = Math.atan2(normY, normX);
+                ctx.fillStyle = '#ffaa33';
+                ctx.beginPath();
+                ctx.moveTo(tipX, tipY);
+                ctx.lineTo(tipX - 7 * Math.cos(angle - 0.7), tipY - 7 * Math.sin(angle - 0.7));
+                ctx.lineTo(tipX - 7 * Math.cos(angle + 0.7), tipY - 7 * Math.sin(angle + 0.7));
+                ctx.closePath();
+                ctx.fill();
+            }
+            // Label
+            ctx.fillStyle = '#ffaa33';
+            ctx.font = 'bold 10px "Courier New"';
+            ctx.fillText('WIND', compX, compY - radius - 16);
+        }
+
+        // ──────────────────────
+        // EVENT HANDLERS
+        // ──────────────────────
+        angleSlider.addEventListener('input', (e) => {
+            if (isFlying) return;
+            crabAngleDeg = parseFloat(e.target.value);
+            angleValue.textContent = crabAngleDeg.toFixed(1) + '°';
+            crabAngleRad = crabAngleDeg * Math.PI / 180;
+            planeAngleVisual = crabAngleRad;
+            updateThrustDisplay();
+            drawScene();
+        });
+
+        btnLaunch.addEventListener('click', startFlight);
+        btnReset.addEventListener('click', resetSimulation);
+        btnHint.addEventListener('click', showHintNow);
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.code === 'Space') {
+                e.preventDefault();
+                if (!isFlying && !successProcessed) startFlight();
+                else if (isFlying) stopFlight();
+            } else if (e.key === 'r' || e.key === 'R') {
+                resetSimulation();
+            } else if (e.key === 'h' || e.key === 'H') {
+                showHintNow();
+            } else if (e.key === 'ArrowLeft') {
+                if (!isFlying && !successProcessed) {
+                    angleSlider.value = Math.max(-80, parseFloat(angleSlider.value) - 1);
+                    angleSlider.dispatchEvent(new Event('input'));
+                }
+            } else if (e.key === 'ArrowRight') {
+                if (!isFlying && !successProcessed) {
+                    angleSlider.value = Math.min(80, parseFloat(angleSlider.value) + 1);
+                    angleSlider.dispatchEvent(new Event('input'));
+                }
+            }
+        });
+
+        // Idle redraw loop
+        function idleDraw() {
+            if (!isFlying) drawScene();
+            requestAnimationFrame(idleDraw);
+        }
+
+        loadLevel(1);
+        idleDraw();
+    })();
+</script>
+</body>
+</html>

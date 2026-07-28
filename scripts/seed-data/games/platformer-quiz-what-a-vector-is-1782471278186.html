@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Platformer Quiz — What a Vector Is</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;max-width:100vw;overflow:hidden;background:#0a0a0a;touch-action:none}
+body{display:flex;flex-direction:column;font-family:'Inter','Segoe UI',system-ui,sans-serif;color:#e5e5e5}
+
+/* Canvas takes all space above the control bar */
+#c{display:block;flex:1;width:100%;height:100%;min-height:0;min-width:0;max-width:100vw}
+
+/* Overlays */
+.ov{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10}
+.ov>div{pointer-events:auto}
+.sc{text-align:center;background:rgba(10,10,10,0.97);border:1px solid rgba(22,163,74,0.3);border-radius:16px;padding:32px 20px;max-width:460px;width:90%;box-shadow:0 0 60px rgba(22,163,74,0.1)}
+.sc h1{font-size:24px;font-weight:800;background:linear-gradient(135deg,#22d3ee,#16a34a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+.sc .su{font-size:11px;color:#888;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.1em}
+.sc p{font-size:13px;color:#aaa;line-height:1.7;margin-bottom:20px}
+.bt{padding:13px 32px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer;text-transform:uppercase;letter-spacing:0.08em;box-shadow:0 0 20px rgba(22,163,74,0.3);transition:all 0.2s;-webkit-tap-highlight-color:transparent}
+.bt:hover,.bt:active{opacity:0.9}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.sb{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px}
+.sb .v{font-size:22px;font-weight:800}.sb .l{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:0.08em;margin-top:4px}
+.g .v{color:#16a34a}.a .v{color:#f59e0b}
+.qm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,10,0.98);border:1px solid rgba(245,158,11,0.4);border-radius:14px;padding:20px;max-width:400px;width:92%;z-index:15;display:none}
+.qm h3{font-size:13px;font-weight:600;margin-bottom:12px;line-height:1.5;text-align:center;color:#fff}
+.qm .opts{display:flex;flex-direction:column;gap:8px}
+.qm .opt{padding:13px 12px;background:rgba(30,30,30,0.9);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:12px;cursor:pointer;transition:all 0.15s;color:#ccc;text-align:left;-webkit-tap-highlight-color:transparent}
+.qm .opt:active{border-color:rgba(22,163,74,0.5);background:rgba(22,163,74,0.1)}
+.fb{position:fixed;top:50px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:opacity 0.3s;max-width:88vw;text-align:center;pointer-events:none;white-space:nowrap}
+.fb.show{opacity:1}.fb.ok{background:rgba(22,163,74,0.25);border:1px solid #16a34a;color:#4ade80}.fb.no{background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fca5a5}
+
+/* ─── Mobile control bar ─── */
+/* Always present in DOM; hidden on desktop via media query */
+#mctrl{
+  flex-shrink:0;
+  width:100%;
+  height:80px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 24px 12px;
+  background:rgba(8,8,18,0.95);
+  border-top:1px solid rgba(255,255,255,0.07);
+  z-index:50;
+  gap:16px;
+}
+/* Hide on desktop */
+@media(min-width:769px){
+  #mctrl{display:none}
+}
+.mc-dpad{display:flex;gap:12px;align-items:center}
+.mc-btn{
+  width:62px;height:62px;
+  border-radius:14px;
+  border:2px solid rgba(255,255,255,0.18);
+  background:rgba(255,255,255,0.08);
+  color:#ccc;font-size:22px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  transition:background 0.06s,border-color 0.06s,transform 0.06s;
+  flex-shrink:0;
+}
+.mc-btn.pressed{
+  background:rgba(34,211,238,0.28);
+  border-color:#22d3ee;
+  transform:scale(0.91);
+  color:#22d3ee;
+}
+.mc-jump{
+  width:68px;height:68px;
+  border-radius:50%;
+  background:rgba(22,163,74,0.2);
+  border:2px solid rgba(22,163,74,0.7);
+  color:#4ade80;font-size:26px;
+}
+.mc-jump.pressed{
+  background:rgba(22,163,74,0.5);
+  border-color:#4ade80;
+  color:#fff;
+}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div class="ov">
+  <div id="ts" class="sc">
+    <h1>🎮 Platformer Quiz</h1>
+    <div class="su">Mathematics in Machine Learning — What a Vector Is</div>
+    <p>
+      Run and jump! Answer questions at each gate to proceed.<br><br>
+      <b>⌨ Desktop:</b> ← → move &nbsp;|&nbsp; Space / ↑ jump<br>
+      <b>📱 Mobile:</b> Tap the buttons below
+    </p>
+    <button class="bt" onclick="go()">▶ Start Running</button>
+  </div>
+  <div id="es" class="sc" style="display:none">
+    <h1 id="et"></h1>
+    <div class="su">What a Vector Is</div>
+    <div class="sg">
+      <div class="sb g"><div class="v" id="s1">0</div><div class="l">Gates</div></div>
+      <div class="sb"><div class="v" id="s2">0</div><div class="l">Wrong</div></div>
+      <div class="sb a"><div class="v" id="s3">0</div><div class="l">XP</div></div>
+      <div class="sb"><div class="v" id="s4">0m</div><div class="l">Dist</div></div>
+    </div>
+    <button class="bt" onclick="go()">▶ Run Again</button>
+  </div>
+</div>
+
+<div class="qm" id="qm"><h3 id="qq"></h3><div class="opts" id="qo"></div></div>
+<div class="fb" id="fb"></div>
+
+<!-- Mobile on-screen controls (always in DOM, hidden on desktop by CSS) -->
+<div id="mctrl">
+  <div class="mc-dpad">
+    <!-- Left/Right: TAP TO TOGGLE (on/off). Jump: tap for instant jump. -->
+    <div class="mc-btn" id="mc-left"
+      ontouchstart="mToggle('left');event.preventDefault()"
+      onmousedown="mToggle('left')">◀</div>
+    <div class="mc-btn" id="mc-right"
+      ontouchstart="mToggle('right');event.preventDefault()"
+      onmousedown="mToggle('right')">▶</div>
+  </div>
+  <div class="mc-btn mc-jump" id="mc-jump"
+    ontouchstart="mJump();event.preventDefault()"
+    onmousedown="mJump()">↑</div>
+</div>
+
+<script>
+const QS=[{"question":"A vector in machine learning is best described as:","correct":"An ordered list of numbers representing direction and magnitude","wrong":["A single number representing magnitude","A mathematical operation between two numbers","A type of matrix with one row"],"explanation":"A vector is an ordered list of numbers — it encodes both direction and magnitude. A single number is a scalar."},{"question":"What does multiplying a vector by a positive scalar change?","correct":"Magnitude only, not direction","wrong":["Both direction and magnitude","Direction only, not magnitude","Neither — it's the identity operation"],"explanation":"A positive scalar scales the length without changing direction. Only negative scalars reverse direction."},{"question":"Why do we represent data — images, words, user histories — as vectors in ML?","correct":"Because vectors allow geometric operations like distance and similarity","wrong":["Because vectors are the only data structure GPUs support","Because vectors compress data more efficiently","Because Turing proposed vectors for neural networks"],"explanation":"Turning data into vectors lets you use dot products, cosine similarity, matrix transformations, and gradients."},{"question":"The word 'doctor' in a modern language model has approximately how many dimensions?","correct":"768","wrong":["3","50","10,000"],"explanation":"A standard BERT-base embedding is 768-dimensional. GPT-3 uses 12,288. 768 is the canonical benchmark."},{"question":"Who invented the coordinate system that allows naming every point with numbers?","correct":"René Descartes","wrong":["Isaac Newton","William Hamilton","Hermann Grassmann"],"explanation":"Descartes unified algebra and geometry by inventing the coordinate system in the early 1600s."},{"question":"A vector can be seen as three things at once. Which is NOT one of them?","correct":"A matrix with equal rows and columns","wrong":["An arrow with direction and magnitude","A point relative to the origin","A list of numbers"],"explanation":"A vector is an arrow, a point, and a list of numbers — not a square matrix."},{"question":"In bag-of-words, 'dogs chase cats' and 'cats chase dogs' produce:","correct":"Identical vectors — order is lost","wrong":["Opposite vectors","Perpendicular vectors","Vectors of different dimensions"],"explanation":"Bag-of-words counts word frequencies and ignores order, so both sentences give [1, 1, 1]."},{"question":"What does vector addition represent conceptually?","correct":"Combining facts or features together","wrong":["Multiplying magnitudes","Rotating directions","Removing dimensions"],"explanation":"Adding [1,0,0] (has fur) + [0,1,0] (four legs) = [1,1,0] — addition combines information."},{"question":"A photograph is converted to a vector by:","correct":"Flattening pixel values into a list of numbers","wrong":["Compressing it into 3 values","Converting it to text first","Taking its average color"],"explanation":"Each pixel contributes values to a long list — the image becomes a high-dimensional vector."},{"question":"Scalar multiplication of a vector by 2 means:","correct":"Same direction, twice the magnitude","wrong":["Double the dimensions","Rotate by 2 degrees","Add 2 to every component"],"explanation":"Scaling by 2 doubles the length while preserving direction — same concept, stronger signal."},{"question":"Before any ML model can classify or generate, the world must first become:","correct":"Vectors","wrong":["Matrices","Scalars","Graphs"],"explanation":"Every ML pipeline begins by converting raw data — images, words, behavior — into vectors."},{"question":"Descartes had his key insight about the coordinate system while:","correct":"Sheltering in a stove-heated room as a soldier","wrong":["Teaching at a university","Working at a telescope","Writing a physics textbook"],"explanation":"In 1619, the young soldier Descartes had three dreams in a stove-heated room in Bavaria that led him to unify algebra and geometry."}];
+const cv=document.getElementById('c');
+const cx=cv.getContext('2d');
+
+// ── Canvas sizing: match the actual rendered size of the element ──
+let lastGy = 0;
+function syncCanvasSize(){
+  const oldGy = lastGy;
+  cv.width=window.innerWidth;
+  cv.height=window.innerHeight-(document.getElementById('mctrl').offsetHeight||0);
+  lastGy = cv.height - 90;
+  // If the canvas resizes during gameplay (e.g. mobile URL bar hides), shift all Y coordinates
+  if(oldGy > 0 && lastGy !== oldGy && state === 'PLAYING') {
+    const dy = lastGy - oldGy;
+    py += dy;
+    platforms.forEach(p => { p.y += dy; });
+    gates.forEach(g => { g.y += dy; });
+    coins.forEach(c => { c.y += dy; });
+  }
+}
+// Run immediately, and again after a tiny delay so layout has settled
+syncCanvasSize();
+setTimeout(syncCanvasSize,100);
+window.addEventListener('resize',syncCanvasSize);
+
+// Helpers to get current canvas dimensions (post-sync)
+const W=()=>cv.width;
+const H=()=>cv.height;
+const GROUND_Y=()=>cv.height-90;
+
+// ── Audio ──
+let AC;
+function getAC(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC;}
+function tone(f,d,t='sine'){
+  try{const ac=getAC();if(ac.state==='suspended')ac.resume();
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type=t;o.frequency.value=f;g.gain.value=0.06;
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+d);
+    o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d);
+  }catch(e){}
+}
+
+// ── Game constants ──
+const PW=22,PH=30,GRAVITY=0.55,JUMP_VEL=-11;
+let state='TITLE',cam=0,fc=0,paused=false;
+let px=0,py=0,vy=0,onGround=false;
+let platforms=[],gates=[],coins=[];
+let keys={};
+const mKeys={left:false,right:false};
+let jumpQueued=false;
+let queue=[],cc=0,wc=0,score=0,finishX=0;
+
+// ── Mobile button handlers ──
+// Left/Right: TOGGLE — tap once to start moving, tap again to stop
+window.mToggle=function(k){
+  mKeys[k]=!mKeys[k];
+  // If one direction toggled ON, turn off the other
+  if(mKeys[k]){
+    const other=k==='left'?'right':'left';
+    mKeys[other]=false;
+    const otherEl=document.getElementById('mc-'+other);
+    if(otherEl)otherEl.classList.remove('pressed');
+  }
+  const el=document.getElementById('mc-'+k);
+  if(el)el.classList.toggle('pressed',mKeys[k]);
+};
+// Jump: instant trigger (no toggle)
+window.mJump=function(){
+  jumpQueued=true;
+  // Brief visual flash
+  const el=document.getElementById('mc-jump');
+  if(el){el.classList.add('pressed');setTimeout(()=>el.classList.remove('pressed'),150);}
+};
+// Reset all mobile toggles (call on game start and when gate appears)
+function mReset(){
+  mKeys.left=false;mKeys.right=false;
+  ['left','right'].forEach(k=>{
+    const el=document.getElementById('mc-'+k);
+    if(el)el.classList.remove('pressed');
+  });
+}
+
+// ── Utilities ──
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function showFb(t,c){
+  const e=document.getElementById('fb');
+  e.textContent=t;e.className='fb show '+c;
+  setTimeout(()=>e.className='fb',2500);
+}
+
+// ── Level generation ──
+function genLevel(){
+  platforms=[];gates=[];coins=[];
+  const gy=GROUND_Y();
+  platforms.push({x:-200,y:gy+PH,w:999999,h:60,type:'ground'});
+  const gateCount=Math.min(QS.length,8);
+  for(let i=0;i<gateCount;i++){
+    const gx=450+i*550;
+    platforms.push({x:gx-220,y:gy-28,w:90,h:12,type:'platform'});
+    platforms.push({x:gx-80,y:gy-60,w:90,h:12,type:'platform'});
+    gates.push({x:gx,y:gy+PH-55,w:38,h:55,qIdx:i,open:false});
+    for(let j=0;j<3;j++)coins.push({x:gx-170+j*70,y:gy-10-Math.random()*40,r:7,collected:false});
+  }
+  finishX=450+gateCount*550+150;
+  platforms.push({x:finishX,y:gy-48,w:8,h:78,type:'flag'});
+}
+
+// ── Quiz gate ──
+function showGateQ(gate){
+  paused=true;
+  const q=queue[gate.qIdx%queue.length];
+  document.getElementById('qq').textContent=q.question;
+  const opts=shuf([q.correct,...q.wrong.slice(0,3)]);
+  const container=document.getElementById('qo');
+  container.innerHTML='';
+  opts.forEach(function(o){
+    const btn=document.createElement('div');
+    btn.className='opt';
+    btn.textContent=o;
+    const isCorrect=(o===q.correct);
+    const expl=q.explanation;
+    const qIdx=gate.qIdx;
+    btn.addEventListener('click',function(){gateAns(qIdx,isCorrect,expl);});
+    container.appendChild(btn);
+  });
+  document.getElementById('qm').style.display='block';
+  mReset();
+}
+window.gateAns=function(gi,correct,expl){
+  document.getElementById('qm').style.display='none';paused=false;
+  if(correct){tone(523,0.1);setTimeout(()=>tone(784,0.12),80);cc++;score+=80;gates[gi].open=true;showFb('✓ Gate open!','ok');}
+  else{tone(200,0.25,'sawtooth');wc++;showFb('✗ '+expl,'no');}
+};
+
+// ── Start / End ──
+function go(){
+  document.getElementById('ts').style.display='none';
+  document.getElementById('es').style.display='none';
+  syncCanvasSize();
+  state='PLAYING';
+  const gy=GROUND_Y();
+  px=100;py=gy;vy=0;onGround=true;cam=0;
+  queue=shuf(QS);cc=0;wc=0;score=0;paused=false;jumpQueued=false;
+  mReset(); // clear any leftover toggles from previous run
+  tone(440,0.05);
+  genLevel();
+}
+function endG(){
+  state='OVER';
+  document.getElementById('et').textContent='🎮 Level Complete!';
+  document.getElementById('s1').textContent=cc;
+  document.getElementById('s2').textContent=wc;
+  document.getElementById('s3').textContent=score;
+  document.getElementById('s4').textContent=Math.round(px/10)+'m';
+  document.getElementById('es').style.display='block';
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown',e=>{keys[e.key]=true;if(e.key===' ')e.preventDefault();});
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+// ── Update ──
+function update(){
+  if(paused)return;
+  const gy=GROUND_Y();
+
+  // Move
+  if(keys['ArrowLeft']||keys['a']||mKeys.left)px-=5;
+  if(keys['ArrowRight']||keys['d']||mKeys.right)px+=5;
+
+  // Jump — keyboard
+  if((keys[' ']||keys['ArrowUp']||keys['w'])&&onGround){vy=JUMP_VEL;onGround=false;tone(800,0.06);}
+  // Jump — mobile touch (queued on touchstart for instant response)
+  if(jumpQueued&&onGround){vy=JUMP_VEL;onGround=false;tone(800,0.06);}
+  jumpQueued=false;
+
+  px=Math.max(0,px);
+  vy+=GRAVITY;
+  py+=vy;
+
+  // Platform collisions
+  onGround=false;
+  for(const p of platforms){
+    const pb=py+PH,pr=px+PW;
+    if(pr>p.x&&px<p.x+p.w&&pb>=p.y&&pb<=p.y+p.h+8&&vy>=0){
+      py=p.y-PH;vy=0;onGround=true;
+    }
+  }
+  if(py+PH>gy+PH){py=gy;vy=0;onGround=true;}
+
+  // Gate collisions
+  for(const g of gates){
+    if(!g.open&&Math.abs(px-g.x)<35&&py+PH>g.y){px=g.x-40;showGateQ(g);return;}
+  }
+
+  // Coins
+  coins.forEach(c=>{
+    if(!c.collected){
+      const dx=(px+PW/2)-c.x,dy=(py+PH/2)-c.y;
+      if(Math.sqrt(dx*dx+dy*dy)<c.r+12){c.collected=true;score+=20;tone(1000,0.06);}
+    }
+  });
+
+  // Camera
+  const targetCam=px-W()*0.3;
+  cam+=(targetCam-cam)*0.1;
+  if(cam<0)cam=0;
+
+  if(px+PW>=finishX)endG();
+}
+
+// ── Draw ──
+function draw(){
+  fc++;
+  const w=W(),h=H(),gy=GROUND_Y();
+  cx.clearRect(0,0,w,h);
+
+  // Background gradient
+  const bg=cx.createLinearGradient(0,0,0,h);
+  bg.addColorStop(0,'#060812');bg.addColorStop(0.6,'#080a10');bg.addColorStop(1,'#0a0a0a');
+  cx.fillStyle=bg;cx.fillRect(0,0,w,h);
+
+  // Stars
+  for(let i=0;i<35;i++){
+    cx.fillStyle='rgba(255,255,255,'+(0.15+Math.sin(fc*0.01+i)*0.12)+')';
+    cx.beginPath();cx.arc((i*53+fc*0.08)%w,(i*29)%h*0.5,0.7,0,Math.PI*2);cx.fill();
+  }
+
+  if(state==='PLAYING'){
+    update();
+    const gyBase=gy+PH;
+
+    // Ground fill
+    cx.fillStyle='#111';cx.fillRect(0,gyBase,w,h-gyBase);
+    cx.strokeStyle='rgba(22,163,74,0.4)';cx.lineWidth=2;
+    cx.beginPath();cx.moveTo(0,gyBase);cx.lineTo(w,gyBase);cx.stroke();
+
+    // Platforms
+    platforms.forEach(p=>{
+      if(p.type==='platform'){
+        const sx=p.x-cam;
+        if(sx>-130&&sx<w+130){
+          cx.fillStyle='#1e1e1e';cx.fillRect(sx,p.y,p.w,p.h);
+          cx.fillStyle='#16a34a';cx.fillRect(sx,p.y,p.w,3);
+        }
+      }
+      if(p.type==='flag'){
+        const sx=p.x-cam;
+        if(sx>-70&&sx<w+70){
+          cx.fillStyle='#777';cx.fillRect(sx,p.y,p.w,p.h);
+          cx.fillStyle='#16a34a';cx.fillRect(sx+p.w,p.y,32,20);
+          cx.fillStyle='#fff';cx.font='700 11px Inter,system-ui';cx.textAlign='left';cx.fillText('🏁',sx+p.w+4,p.y+14);
+          cx.fillStyle='#4ade80';cx.font='700 14px Inter,system-ui';cx.textAlign='center';cx.fillText('FINISH',sx+p.w/2,p.y-10);
+          cx.shadowColor='#16a34a';cx.shadowBlur=14;
+          cx.fillStyle='rgba(22,163,74,0.25)';cx.fillRect(sx-8,p.y-4,p.w+18,p.h+4);
+          cx.shadowBlur=0;
+        }
+      }
+    });
+
+    // Gates
+    gates.forEach(g=>{
+      const sx=g.x-cam;if(sx<-70||sx>w+70)return;
+      if(g.open){
+        cx.fillStyle='rgba(22,163,74,0.12)';cx.fillRect(sx-12,g.y,g.w+24,g.h);
+        cx.strokeStyle='#16a34a';cx.lineWidth=2;cx.strokeRect(sx-12,g.y,g.w+24,g.h);
+        cx.fillStyle='#16a34a';cx.font='700 16px Inter,system-ui';cx.textAlign='center';cx.fillText('✓',sx+g.w/2,g.y+g.h/2+6);
+      }else{
+        cx.fillStyle='rgba(245,158,11,0.12)';cx.fillRect(sx-4,g.y,g.w+8,g.h);
+        cx.strokeStyle='#f59e0b';cx.lineWidth=2;cx.strokeRect(sx-4,g.y,g.w+8,g.h);
+        cx.fillStyle='#f59e0b';cx.font='700 16px Inter,system-ui';cx.textAlign='center';cx.fillText('🔒',sx+g.w/2,g.y+g.h/2+6);
+      }
+    });
+
+    // Coins
+    coins.forEach(c=>{
+      if(c.collected)return;
+      const sx=c.x-cam;if(sx<-24||sx>w+24)return;
+      const bobY=c.y+Math.sin(fc*0.05+c.x)*3;
+      cx.shadowColor='#f59e0b';cx.shadowBlur=7;
+      cx.fillStyle='#f59e0b';cx.beginPath();cx.arc(sx,bobY,c.r,0,Math.PI*2);cx.fill();
+      cx.shadowBlur=0;
+      cx.fillStyle='#1a0a00';cx.font='700 8px Inter,system-ui';cx.textAlign='center';cx.textBaseline='middle';cx.fillText('$',sx,bobY);cx.textBaseline='alphabetic';
+    });
+
+    // Player
+    const psx=px-cam;
+    cx.fillStyle='#22d3ee';cx.shadowColor='#22d3ee';cx.shadowBlur=10;
+    cx.fillRect(psx,py,PW,PH);cx.shadowBlur=0;
+    cx.fillStyle='#050a0a';cx.fillRect(psx+5,py+8,4,4);cx.fillRect(psx+13,py+8,4,4);
+
+    // HUD bar
+    cx.fillStyle='rgba(6,8,18,0.9)';cx.fillRect(0,0,w,38);
+    cx.fillStyle='#16a34a';cx.font='700 13px Inter,system-ui';cx.textAlign='left';cx.fillText('Gates: '+cc+'/'+gates.length,12,24);
+    cx.fillStyle='#f59e0b';cx.textAlign='right';cx.fillText(score+' XP',w-12,24);
+    const dtf=Math.max(0,Math.round((finishX-px)/10));
+    cx.textAlign='center';cx.fillStyle='#22d3ee';cx.font='500 12px Inter,system-ui';
+    cx.fillText(dtf>0?dtf+'m to 🏁':'🏁 Reach the flag!',w/2,24);
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>

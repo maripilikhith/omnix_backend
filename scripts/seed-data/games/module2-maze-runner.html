@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Runner — Beyond Three Dimensions</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a0a;color:#e5e5e5;font-family:'Inter','Segoe UI',system-ui,sans-serif;overflow:hidden;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+  canvas{display:block;border-radius:12px}
+  .ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10}
+  .ov>div{pointer-events:auto}
+  .sc{text-align:center;background:rgba(10,10,10,0.97);border:1px solid rgba(22,163,74,0.3);border-radius:16px;padding:48px;max-width:480px;box-shadow:0 0 60px rgba(22,163,74,0.1)}
+  .sc h1{font-size:32px;font-weight:800;background:linear-gradient(135deg,#16a34a,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+  .sc .su{font-size:13px;color:#888;margin-bottom:24px;text-transform:uppercase;letter-spacing:0.1em}
+  .sc p{font-size:15px;color:#aaa;line-height:1.7;margin-bottom:24px}
+  .bt{padding:14px 40px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;font-size:15px;font-weight:700;border:none;border-radius:10px;cursor:pointer;text-transform:uppercase;letter-spacing:0.08em;box-shadow:0 0 25px rgba(22,163,74,0.3);transition:all 0.2s}
+  .bt:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(22,163,74,0.5)}
+  .sg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+  .sb{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px}
+  .sb .v{font-size:28px;font-weight:800}.sb .l{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.08em;margin-top:4px}
+  .g .v{color:#16a34a}.a .v{color:#f59e0b}.r .v{color:#ef4444}
+  /* Quiz modal */
+  .qm{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,10,0.97);border:1px solid rgba(245,158,11,0.4);border-radius:16px;padding:32px;max-width:420px;width:90%;z-index:15;display:none;box-shadow:0 0 40px rgba(245,158,11,0.1)}
+  .qm h3{font-size:15px;font-weight:600;margin-bottom:16px;line-height:1.6}
+  .qm .opts{display:flex;flex-direction:column;gap:8px}
+  .qm .opt{padding:12px 16px;background:rgba(30,30,30,0.9);border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;cursor:pointer;text-align:left;transition:all 0.15s;color:#ccc}
+  .qm .opt:hover{border-color:rgba(22,163,74,0.5);background:rgba(22,163,74,0.08)}
+  .qm .opt.ok{border-color:#16a34a;background:rgba(22,163,74,0.15);color:#4ade80}
+  .qm .opt.no{border-color:#ef4444;background:rgba(239,68,68,0.15);color:#fca5a5}
+  .fb{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:10px;font-size:13px;font-weight:600;z-index:100;opacity:0;transition:opacity 0.3s;max-width:500px;text-align:center;pointer-events:none}
+  .fb.show{opacity:1}.fb.ok{background:rgba(22,163,74,0.2);border:1px solid #16a34a;color:#4ade80}.fb.no{background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="ov">
+  <div id="ts" class="sc">
+    <h1>🏃 Maze Runner</h1>
+    <div class="su">Mathematics in Machine Learning — Beyond Three Dimensions</div>
+    <p>Navigate the maze using <strong>arrow keys</strong> or <strong>WASD</strong>. At locked gates, answer a question to proceed. Reach the exit to win!</p>
+    <button class="bt" onclick="go()">Enter the Maze</button>
+  </div>
+  <div id="es" class="sc" style="display:none">
+    <h1 id="et"></h1>
+    <div class="su">Beyond Three Dimensions</div>
+    <div class="sg">
+      <div class="sb g"><div class="v" id="s1">0</div><div class="l">Gates Passed</div></div>
+      <div class="sb r"><div class="v" id="s2">0</div><div class="l">Wrong</div></div>
+      <div class="sb a"><div class="v" id="s3">0</div><div class="l">XP Earned</div></div>
+      <div class="sb"><div class="v" id="s4">0s</div><div class="l">Time</div></div>
+    </div>
+    <button class="bt" onclick="go()">Run Again</button>
+  </div>
+</div>
+<div class="qm" id="qm">
+  <h3 id="qq"></h3>
+  <div class="opts" id="qo"></div>
+</div>
+<div class="fb" id="fb"></div>
+<script>
+const QS=[{"question":"In high-dimensional spaces, what happens to distances between random points?","correct":"All points become roughly equidistant from each other","wrong":["Points get closer together","Distances stay the same","Distances oscillate unpredictably"],"explanation":"This is the curse of dimensionality: all pairwise distances concentrate around the same value."},{"question":"The 'orange in 1000 dimensions' thought experiment shows that:","correct":"Almost all volume sits near the surface, not the interior","wrong":["Fruit cannot be modelled in high dimensions","Distance metrics break above 10 dimensions","Data always clusters into 3 groups"],"explanation":"In high dimensions, volume concentrates in a thin shell near the boundary. The interior is effectively empty."},{"question":"Why can't humans visualize 768-dimensional space, and how does this affect ML?","correct":"It doesn't affect ML — the algebra works without visual intuition","wrong":["We must reduce all data to 3D before training","768D models are less accurate than 3D ones","Computing above 10D requires special hardware"],"explanation":"The math of vectors and transformations generalises to any number of dimensions. Visual intuition is a human limitation."},{"question":"Hamilton's work on quaternions was important because it established:","correct":"Numbers and spaces can have any number of dimensions","wrong":["Quaternions are used in transformer architectures","Four numbers became the template for four-layer networks","High-dimensional math is impossible"],"explanation":"Hamilton's quaternions cracked the assumption that 'numbers' live only in 1D, 2D, or 3D."},{"question":"What did Hamilton carve into Brougham Bridge in 1843?","correct":"i² = j² = k² = ijk = −1","wrong":["E = mc²","F = ma","a² + b² = c²"],"explanation":"Hamilton carved the fundamental quaternion equation into stone — inventing four-dimensional number algebra on the spot."},{"question":"In the witness identification story, why did 50 detailed descriptors produce zero matches?","correct":"In 50-dimensional space, no real person's measurements fall close enough on all dimensions simultaneously","wrong":["The witness was lying","The database was too small","50 descriptors is too few"],"explanation":"In high dimensions, the distance between any two people is enormous. More precision makes matching harder, not easier."},{"question":"'Dimension' in ML simply means:","correct":"Another column in the spreadsheet","wrong":["A physical spatial direction","A separate neural network layer","A different training example"],"explanation":"You don't need to picture 768 dimensions. Each dimension is just another number in the list — another column."},{"question":"In high-dimensional spaces, random points are almost always:","correct":"Nearly orthogonal to each other","wrong":["Parallel to each other","At the origin","Clustered tightly"],"explanation":"As dimensions increase, random vectors become nearly perpendicular — a surprising property of high-dimensional geometry."},{"question":"The curse of dimensionality makes which ML technique less reliable?","correct":"Nearest neighbor search","wrong":["Matrix multiplication","Gradient descent","Backpropagation"],"explanation":"When all points are roughly equidistant, 'nearest neighbor' becomes nearly meaningless."},{"question":"GPT-3's embeddings are how many dimensions?","correct":"12,288","wrong":["768","256","3"],"explanation":"GPT-3 uses 12,288-dimensional embeddings. BERT-base uses 768. Smaller models may use 256 or 512."},{"question":"High-dimensional geometry is:","correct":"Qualitatively different from low-dimensional geometry, not just scaled up","wrong":["The same as 3D geometry but bigger","Only useful for images","Impossible to compute with"],"explanation":"Properties like volume concentration and equidistance are unique to high dimensions — they don't exist in 3D."}];
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+const W=Math.min(window.innerWidth-40,900),H=Math.min(window.innerHeight-40,650);
+cv.width=W;cv.height=H;
+
+const AC=new(window.AudioContext||window.webkitAudioContext)();
+function tone(f,d,t='sine'){const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=0.06;g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d);}
+
+// Maze generation (simple grid-based)
+const COLS=15,ROWS=11,CS=Math.floor(Math.min((W-20)/COLS,(H-60)/ROWS));
+const MX=Math.floor((W-COLS*CS)/2),MY=50;
+let maze=[],player={r:0,c:0},exitR,exitC;
+let state='TITLE',gates=[],gateIdx=0,cc=0,wc=0,startTime=0,fc=0;
+let keys={};
+
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function fb(t,c){const e=document.getElementById('fb');e.textContent=t;e.className='fb show '+c;setTimeout(()=>e.className='fb',2200);}
+
+function genMaze(){
+  // Initialize grid: 0=wall, 1=path
+  maze=Array.from({length:ROWS},()=>Array(COLS).fill(0));
+  function carve(r,c){
+    maze[r][c]=1;
+    const dirs=shuf([[0,2],[0,-2],[2,0],[-2,0]]);
+    for(const[dr,dc]of dirs){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&maze[nr][nc]===0){
+        maze[r+dr/2][c+dc/2]=1;
+        carve(nr,nc);
+      }
+    }
+  }
+  // Start from top-left area
+  const sr=1,sc=1;carve(sr,sc);
+  player={r:sr,c:sc};
+  // Find exit (bottom-right area path)
+  exitR=ROWS-2;exitC=COLS-2;
+  if(maze[exitR][exitC]===0){for(let r=ROWS-1;r>=0;r--)for(let c=COLS-1;c>=0;c--)if(maze[r][c]===1){exitR=r;exitC=c;break;}}
+
+  // Place gates on random path cells
+  gates=[];gateIdx=0;
+  const pathCells=[];
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(maze[r][c]===1&&!(r===sr&&c===sc)&&!(r===exitR&&c===exitC))pathCells.push([r,c]);
+  const gateCells=shuf(pathCells).slice(0,Math.min(QS.length,8));
+  gateCells.forEach(([r,c],i)=>{
+    maze[r][c]=2;// gate
+    gates.push({r,c,qIdx:i,unlocked:false});
+  });
+}
+
+function go(){
+  document.getElementById('ts').style.display='none';
+  document.getElementById('es').style.display='none';
+  document.getElementById('qm').style.display='none';
+  state='PLAYING';cc=0;wc=0;startTime=Date.now();
+  if(AC.state==='suspended')AC.resume();
+  genMaze();
+}
+
+function showGateQ(gate){
+  state='QUIZ';
+  const q=QS[gate.qIdx%QS.length];
+  document.getElementById('qq').textContent=q.question;
+  const opts=shuf([q.correct,...q.wrong.slice(0,3)]);
+  const el=document.getElementById('qo');el.innerHTML='';
+  opts.forEach(o=>{
+    const btn=document.createElement('div');btn.className='opt';btn.textContent=o;
+    btn.onclick=()=>{
+      if(btn.classList.contains('ok')||btn.classList.contains('no'))return;
+      if(o===q.correct){
+        tone(523,0.1);setTimeout(()=>tone(784,0.12),80);
+        btn.classList.add('ok');cc++;gate.unlocked=true;maze[gate.r][gate.c]=1;
+        fb('✓ Gate unlocked!','ok');
+        setTimeout(()=>{document.getElementById('qm').style.display='none';state='PLAYING';},600);
+      } else {
+        tone(200,0.25,'sawtooth');btn.classList.add('no');wc++;
+        fb('✗ '+q.explanation,'no');
+      }
+    };
+    el.appendChild(btn);
+  });
+  document.getElementById('qm').style.display='block';
+}
+
+function endG(){
+  state='OVER';
+  const t=Math.round((Date.now()-startTime)/1000);
+  document.getElementById('et').textContent='🎉 Maze Escaped!';
+  document.getElementById('s1').textContent=cc;document.getElementById('s2').textContent=wc;
+  document.getElementById('s3').textContent=cc*60;document.getElementById('s4').textContent=t+'s';
+  document.getElementById('es').style.display='block';
+}
+
+document.addEventListener('keydown',e=>{keys[e.key]=true;});
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+let moveCD=0;
+function tryMove(dr,dc){
+  if(moveCD>0)return;
+  const nr=player.r+dr,nc=player.c+dc;
+  if(nr<0||nr>=ROWS||nc<0||nc>=COLS)return;
+  if(maze[nr][nc]===0)return;// wall
+  if(maze[nr][nc]===2){// gate
+    const g=gates.find(g=>g.r===nr&&g.c===nc&&!g.unlocked);
+    if(g){showGateQ(g);return;}
+  }
+  tone(1200,0.04);
+  player.r=nr;player.c=nc;moveCD=8;
+  if(nr===exitR&&nc===exitC)endG();
+}
+
+function draw(){
+  fc++;if(moveCD>0)moveCD--;
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='#0a0a0a';cx.fillRect(0,0,W,H);
+
+  if(state==='PLAYING'||state==='QUIZ'){
+    // Handle input
+    if(state==='PLAYING'){
+      if(keys['ArrowUp']||keys['w']||keys['W'])tryMove(-1,0);
+      if(keys['ArrowDown']||keys['s']||keys['S'])tryMove(1,0);
+      if(keys['ArrowLeft']||keys['a']||keys['A'])tryMove(0,-1);
+      if(keys['ArrowRight']||keys['d']||keys['D'])tryMove(0,1);
+    }
+
+    // Draw maze
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const x=MX+c*CS,y=MY+r*CS;
+        if(maze[r][c]===0){
+          cx.fillStyle='#151515';cx.fillRect(x,y,CS,CS);
+          cx.strokeStyle='rgba(255,255,255,0.03)';cx.lineWidth=0.5;cx.strokeRect(x,y,CS,CS);
+        } else if(maze[r][c]===2){
+          cx.fillStyle='rgba(245,158,11,0.12)';cx.fillRect(x,y,CS,CS);
+          cx.strokeStyle='rgba(245,158,11,0.4)';cx.lineWidth=2;cx.strokeRect(x+2,y+2,CS-4,CS-4);
+          cx.fillStyle='#f59e0b';cx.font='600 '+Math.floor(CS*0.4)+'px Inter,system-ui';cx.textAlign='center';cx.textBaseline='middle';
+          cx.fillText('🔒',x+CS/2,y+CS/2);cx.textBaseline='alphabetic';
+        } else {
+          cx.fillStyle='#0d0d0d';cx.fillRect(x,y,CS,CS);
+        }
+      }
+    }
+
+    // Exit
+    const ex=MX+exitC*CS,ey=MY+exitR*CS;
+    cx.fillStyle='rgba(22,163,74,0.2)';cx.fillRect(ex,ey,CS,CS);
+    cx.strokeStyle='#16a34a';cx.lineWidth=2;cx.strokeRect(ex+2,ey+2,CS-4,CS-4);
+    cx.fillStyle='#16a34a';cx.font='600 '+Math.floor(CS*0.5)+'px Inter,system-ui';cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillText('🚪',ex+CS/2,ey+CS/2);cx.textBaseline='alphabetic';
+
+    // Player
+    const px=MX+player.c*CS+CS/2,py=MY+player.r*CS+CS/2,pr=CS*0.35;
+    cx.shadowColor='#22d3ee';cx.shadowBlur=15;
+    cx.fillStyle='#22d3ee';cx.beginPath();cx.arc(px,py,pr,0,Math.PI*2);cx.fill();
+    cx.shadowBlur=0;
+    cx.fillStyle='#0a0a0a';cx.font='700 '+Math.floor(pr)+'px Inter,system-ui';cx.textAlign='center';cx.textBaseline='middle';
+    cx.fillText('◉',px,py);cx.textBaseline='alphabetic';
+
+    // HUD
+    cx.fillStyle='rgba(10,10,10,0.8)';cx.fillRect(0,0,W,40);
+    cx.fillStyle='#16a34a';cx.font='700 14px Inter,system-ui';cx.textAlign='left';cx.fillText('Gates: '+cc,16,26);
+    cx.fillStyle='#f59e0b';cx.textAlign='right';cx.fillText(cc*60+' XP',W-16,26);
+    cx.fillStyle='#22d3ee';cx.textAlign='center';
+    const t=Math.round((Date.now()-startTime)/1000);
+    cx.fillText(t+'s',W/2,26);
+  }
+
+  requestAnimationFrame(draw);
+}
+draw();
+</script>
+</body>
+</html>
