@@ -19,7 +19,7 @@ export class GameRepository extends BaseRepository {
     }
     return this.findAllUnpaginated(
       filter,
-      { sort: { createdAt: 1 }, select: '-htmlContent' },
+      { sort: { order: 1, createdAt: 1 }, select: '-htmlContent' },
     );
   }
 
@@ -29,7 +29,7 @@ export class GameRepository extends BaseRepository {
   async findByCourse(courseSlug) {
     return this.findAllUnpaginated(
       { courseSlug, isPublished: true },
-      { sort: { moduleNumber: 1, createdAt: 1 }, select: '-htmlContent' },
+      { sort: { moduleNumber: 1, order: 1, createdAt: 1 }, select: '-htmlContent' },
     );
   }
 
@@ -52,7 +52,7 @@ export class GameRepository extends BaseRepository {
    */
   async findAllAdmin(queryParams = {}) {
     return this.findAll({}, queryParams, {
-      defaultSort: '-createdAt',
+      defaultSort: 'order createdAt',
       select: '-htmlContent',
     });
   }
@@ -63,7 +63,7 @@ export class GameRepository extends BaseRepository {
   async findAllAdminUnpaginated() {
     return this.findAllUnpaginated(
       {},
-      { sort: { createdAt: -1 }, select: '-htmlContent' },
+      { sort: { order: 1, createdAt: -1 }, select: '-htmlContent' },
     );
   }
 
@@ -73,7 +73,7 @@ export class GameRepository extends BaseRepository {
   async findAllPublishedUnpaginated() {
     return this.findAllUnpaginated(
       { isPublished: true },
-      { sort: { courseSlug: 1, moduleNumber: 1, createdAt: 1 }, select: '-htmlContent' },
+      { sort: { courseSlug: 1, moduleNumber: 1, order: 1, createdAt: 1 }, select: '-htmlContent' },
     );
   }
 

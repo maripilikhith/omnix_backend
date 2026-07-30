@@ -74,6 +74,9 @@ export class GameService extends BaseService {
    * Update a game by its MongoDB _id.
    */
   async updateGame(id, data) {
+    if (data.htmlContent !== undefined && (!data.htmlContent || !data.htmlContent.trim())) {
+      delete data.htmlContent;
+    }
     return this.repository.updateById(id, data);
   }
 

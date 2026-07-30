@@ -25,6 +25,7 @@ export const createGameSchema = {
     estimatedMinutes: Joi.number().integer().min(1).default(5),
     htmlContent: Joi.string().required(),
     version: Joi.number().integer().min(1).default(1),
+    order: Joi.number().integer().min(0).default(0),
     isPublished: Joi.boolean().default(true),
   }),
 };
@@ -46,8 +47,9 @@ export const updateGameSchema = {
     conceptsTested: Joi.array().items(Joi.string().trim()),
     xpReward: Joi.number().integer().min(0),
     estimatedMinutes: Joi.number().integer().min(1),
-    htmlContent: Joi.string(),
+    htmlContent: Joi.string().allow('', null).optional(),
     version: Joi.number().integer().min(1),
+    order: Joi.number().integer().min(0),
     isPublished: Joi.boolean(),
   }).min(1),
 };

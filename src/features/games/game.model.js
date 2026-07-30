@@ -102,6 +102,11 @@ const GameSchema = new mongoose.Schema(
       type: Number,
       default: 1,
     },
+    order: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
     isPublished: {
       type: Boolean,
       default: true,
@@ -116,10 +121,10 @@ const GameSchema = new mongoose.Schema(
 );
 
 // Compound indexes for common queries
-GameSchema.index({ courseSlug: 1, moduleNumber: 1, topicSlug: 1 });
-GameSchema.index({ courseSlug: 1, moduleNumber: 1 });
-GameSchema.index({ isPublished: 1, courseSlug: 1 });
-GameSchema.index({ courseId: 1, moduleNumber: 1 });
+GameSchema.index({ courseSlug: 1, moduleNumber: 1, topicSlug: 1, order: 1 });
+GameSchema.index({ courseSlug: 1, moduleNumber: 1, order: 1 });
+GameSchema.index({ isPublished: 1, courseSlug: 1, order: 1 });
+GameSchema.index({ courseId: 1, moduleNumber: 1, order: 1 });
 
 // Explicit collection name
 export const GameModel = mongoose.model('Game', GameSchema, 'games');
