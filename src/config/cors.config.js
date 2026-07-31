@@ -15,6 +15,9 @@ export const corsConfig = Object.freeze({
       'vercel.app',
       'localhost',
       '127.0.0.1',
+      'onrender.com',
+      'railway.app',
+      'omnix',
     ];
 
     // Add any explicitly configured origins
