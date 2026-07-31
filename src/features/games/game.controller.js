@@ -78,6 +78,42 @@ export const gameController = {
     sendGameHtml(res, html);
   },
 
+  /**
+   * POST /api/v1/games/tts — Proxy endpoint for Azure TTS audio.
+   * Body: { text, voiceId }
+   * Returns Content-Type: audio/mpeg
+   */
+  async speakTts(req, res) {
+    const { text, voiceId } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Text is required for TTS' });
+    }
+    try {
+      const audioBuffer = await gameService.generateSpeech(text, voiceId);
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.send(audioBuffer);
+    } catch (err) {
+      console.error('[TTS Proxy Error]:', err.message);
+      res.status(503).json({ error: err.message });
+    }
+  },
+
+  /**
+   * GET /api/v1/games/speech-token — Issue a short-lived Azure Speech token.
+   * Returns { token, region }
+   */
+  async getSpeechToken(req, res) {
+    try {
+      const data = await gameService.issueSpeechToken();
+      return ApiResponse.success(res, data);
+    } catch (err) {
+      console.error('[Speech Token Error]:', err.message);
+      return res.status(503).json({ error: err.message });
+    }
+  },
+
   // ─── Admin Endpoints ────────────────────────────────────────────
 
   /**

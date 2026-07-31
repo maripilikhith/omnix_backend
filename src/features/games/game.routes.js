@@ -23,6 +23,24 @@ router.get(
 );
 
 /**
+ * POST /api/v1/games/tts
+ * Proxy endpoint for Azure Speech TTS audio.
+ */
+router.post(
+  '/tts',
+  catchAsync(gameController.speakTts),
+);
+
+/**
+ * GET /api/v1/games/speech-token
+ * Token endpoint for short-lived Azure Speech SDK streaming token.
+ */
+router.get(
+  '/speech-token',
+  catchAsync(gameController.getSpeechToken),
+);
+
+/**
  * GET /api/v1/games/:gameId
  * Returns game metadata (no htmlContent).
  */
