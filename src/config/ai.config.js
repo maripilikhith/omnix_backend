@@ -4,8 +4,8 @@
 export const aiConfig = Object.freeze({
   defaultProvider: process.env.AI_DEFAULT_PROVIDER || 'gemini',
   gemini: {
-    apiKey: process.env.GEMINI_API_KEY || '',
-    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     maxTokens: parseInt(process.env.GEMINI_MAX_TOKENS, 10) || 8192,
     temperature: parseFloat(process.env.GEMINI_TEMPERATURE) || 0.7,
   },

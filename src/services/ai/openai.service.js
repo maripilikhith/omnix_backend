@@ -36,11 +36,30 @@ export class OpenAIProvider extends AIProvider {
     }
   }
 
+  _formatUserMessage(prompt, options = {}) {
+    const imageBase64 = options.imageBase64 || options.screenshot_base64 || options.screenshot;
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return [{ role: 'user', content: prompt }];
+    }
+    const imageUrl = imageBase64.startsWith('data:')
+      ? imageBase64
+      : `data:image/jpeg;base64,${imageBase64}`;
+    return [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: imageUrl } },
+        ],
+      },
+    ];
+  }
+
   async generateText(prompt, options = {}) {
     const client = await this._getClient();
     const response = await client.chat.completions.create({
       model: options.model || this.model,
-      messages: [{ role: 'user', content: prompt }],
+      messages: this._formatUserMessage(prompt, options),
       max_tokens: options.maxTokens || this.maxTokens,
       temperature: options.temperature ?? this.temperature,
     });
@@ -51,7 +70,7 @@ export class OpenAIProvider extends AIProvider {
     const client = await this._getClient();
     const response = await client.chat.completions.create({
       model: options.model || this.model,
-      messages: [{ role: 'user', content: prompt }],
+      messages: this._formatUserMessage(prompt, options),
       max_tokens: options.maxTokens || this.maxTokens,
       temperature: options.temperature ?? this.temperature,
       response_format: { type: 'json_object' },

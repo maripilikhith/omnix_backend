@@ -182,6 +182,7 @@ legacyAdmin.put('/games/:id', catchAsync(gameController.legacyUpdate));
 legacyAdmin.delete('/games/:id', catchAsync(gameController.legacyRemove));
 
 app.use('/api/admin', legacyAdmin);
+app.use('/api/ai', aiRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 

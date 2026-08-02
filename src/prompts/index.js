@@ -3,6 +3,7 @@ import { videoChatPrompt } from './videoChat.prompt.js';
 import { quizGenerationPrompt } from './quizGeneration.prompt.js';
 import { summaryPrompt } from './summary.prompt.js';
 import { storyNarrationPrompt } from './storyNarration.prompt.js';
+import { queryResolverPrompt } from './queryResolver.prompt.js';
 
 /**
  * Centralized prompt registry.
@@ -14,4 +15,5 @@ export const prompts = {
   quizGeneration: quizGenerationPrompt,
   summary: summaryPrompt,
   storyNarration: storyNarrationPrompt,
+  queryResolver: queryResolverPrompt,
 };
