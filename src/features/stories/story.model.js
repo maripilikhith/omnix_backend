@@ -26,6 +26,7 @@ const StorySchema = new mongoose.Schema(
     moments: { type: [MomentSchema], default: [] },
     narrativeStyle: { type: String, default: 'cinematic' },
     characters: { type: [String], default: [] },
+    interactiveQuestions: { type: [mongoose.Schema.Types.Mixed], default: [] },
   },
   { timestamps: true },
 );

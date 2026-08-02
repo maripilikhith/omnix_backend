@@ -18,6 +18,7 @@ const ExplainerSchema = new mongoose.Schema(
     imageUrl: { type: String, default: '' },
     formulaLatex: { type: String, default: '' },
     xpReward: { type: Number, default: 0 },
+    interactiveQuestions: { type: [mongoose.Schema.Types.Mixed], default: [] },
     isPublished: { type: Boolean, default: true, index: true },
   },
   { timestamps: true },
