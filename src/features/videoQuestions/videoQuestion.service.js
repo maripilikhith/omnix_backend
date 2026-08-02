@@ -50,11 +50,11 @@ export class VideoQuestionService {
 The objectively correct answer is: '${right_answer}'.
 The student answered: '${answer_from_user}'.
 Evaluate the student's answer. If it is correct, praise them encouragingly. If it is incorrect or partially correct, gently correct them, provide the right answer, and explain why so they can learn from it.
-Keep your explanation concise and directly to the point. Do not over-explain.
+Keep your explanation concise and directly to the point. Do not over-explain. Do not repeat sentences or duplicate the correct answer at the end.
 
 Respond with a JSON object:
 {
-  "output": "A clear string containing encouraging and constructive feedback explaining whether the student's answer is correct and why."
+  "output": "A clear string containing encouraging and constructive feedback explaining whether the student's answer is correct and why. Do not duplicate or repeat sentences."
 }`;
     }
 
@@ -84,7 +84,18 @@ Respond with a JSON object:
         outputText = parsedJson;
       }
 
-      const strOutput = String(outputText || 'Answer evaluated.');
+      // Deduplicate any repeated sentences or double answers at the end
+      const rawString = String(outputText || 'Answer evaluated.');
+      const sentences = rawString.split(/(?<=[.!?])\s+/);
+      const uniqueSentences = [];
+      for (const s of sentences) {
+        const trimmed = s.trim();
+        if (trimmed && !uniqueSentences.includes(trimmed)) {
+          uniqueSentences.push(trimmed);
+        }
+      }
+      const strOutput = uniqueSentences.join(' ');
+
       return {
         output: strOutput,
         isCorrect: Boolean(parsedJson.isCorrect ?? false),

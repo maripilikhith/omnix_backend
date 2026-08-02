@@ -10,8 +10,9 @@ export class CodexProvider extends AIProvider {
   constructor() {
     super('codex');
     this.apiKey = config.ai.codex?.apiKey || config.ai.openai?.apiKey || '';
-    this.model = config.ai.codex?.model || 'gpt-4o-mini';
+    this.model = config.ai.codex?.model || 'gpt-5.4-mini';
     this.baseUrl = config.ai.codex?.baseUrl || '';
+    this.apiVersion = config.ai.codex?.apiVersion || '2024-08-01-preview';
     this.maxTokens = config.ai.codex?.maxTokens || 4096;
     this.temperature = config.ai.codex?.temperature ?? 0.7;
     this.client = null;
@@ -25,12 +26,21 @@ export class CodexProvider extends AIProvider {
     }
 
     try {
-      const { default: OpenAI } = await import('openai');
-      const clientConfig = { apiKey: this.apiKey };
-      if (this.baseUrl) {
-        clientConfig.baseURL = this.baseUrl;
+      const { default: OpenAI, AzureOpenAI } = await import('openai');
+      if (this.baseUrl && this.baseUrl.includes('.openai.azure.com')) {
+        this.client = new AzureOpenAI({
+          apiKey: this.apiKey,
+          endpoint: this.baseUrl,
+          apiVersion: this.apiVersion,
+          deployment: this.model,
+        });
+      } else {
+        const clientConfig = { apiKey: this.apiKey };
+        if (this.baseUrl) {
+          clientConfig.baseURL = this.baseUrl;
+        }
+        this.client = new OpenAI(clientConfig);
       }
-      this.client = new OpenAI(clientConfig);
       logger.info('Codex provider initialized', { model: this.model, baseUrl: this.baseUrl || 'default' });
       return this.client;
     } catch (err) {

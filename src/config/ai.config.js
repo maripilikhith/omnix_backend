@@ -5,8 +5,9 @@ export const aiConfig = Object.freeze({
   defaultProvider: process.env.AI_DEFAULT_PROVIDER || 'codex',
   codex: {
     apiKey: process.env.CODEX_API_KEY || process.env.OPENAI_API_KEY || '',
-    model: process.env.CODEX_MODEL || 'gpt-4o-mini',
+    model: process.env.CODEX_MODEL || 'gpt-5.4-mini',
     baseUrl: process.env.CODEX_BASE_URL || '',
+    apiVersion: process.env.CODEX_API_VERSION || '2024-08-01-preview',
     maxTokens: parseInt(process.env.CODEX_MAX_TOKENS, 10) || 4096,
     temperature: parseFloat(process.env.CODEX_TEMPERATURE) || 0.7,
   },
