@@ -1,5 +1,6 @@
 import { GeminiProvider } from './gemini.service.js';
 import { OpenAIProvider } from './openai.service.js';
+import { CodexProvider } from './codex.service.js';
 import config from '../../config/index.js';
 
 /**
@@ -10,19 +11,21 @@ const providers = {};
 /**
  * Create an AI provider instance by name.
  *
- * @param {string} [providerName] - Provider name ('gemini', 'openai')
+ * @param {string} [providerName] - Provider name ('codex', 'gemini', 'openai')
  * @returns {import('./ai.provider.js').AIProvider}
  */
 export function createAIProvider(providerName) {
   const name = providerName || config.ai.defaultProvider;
 
   switch (name) {
+    case 'codex':
+      return new CodexProvider();
     case 'gemini':
       return new GeminiProvider();
     case 'openai':
       return new OpenAIProvider();
     default:
-      throw new Error(`Unknown AI provider: ${name}. Supported: gemini, openai`);
+      throw new Error(`Unknown AI provider: ${name}. Supported: codex, gemini, openai`);
   }
 }
 

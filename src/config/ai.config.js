@@ -2,7 +2,14 @@
  * AI provider configuration.
  */
 export const aiConfig = Object.freeze({
-  defaultProvider: process.env.AI_DEFAULT_PROVIDER || 'gemini',
+  defaultProvider: process.env.AI_DEFAULT_PROVIDER || 'codex',
+  codex: {
+    apiKey: process.env.CODEX_API_KEY || process.env.OPENAI_API_KEY || '',
+    model: process.env.CODEX_MODEL || 'gpt-4o-mini',
+    baseUrl: process.env.CODEX_BASE_URL || '',
+    maxTokens: parseInt(process.env.CODEX_MAX_TOKENS, 10) || 4096,
+    temperature: parseFloat(process.env.CODEX_TEMPERATURE) || 0.7,
+  },
   gemini: {
     apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '',
     model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
