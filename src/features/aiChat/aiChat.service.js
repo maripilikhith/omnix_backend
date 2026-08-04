@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { getAIProvider } from '../../services/ai/index.js';
 import { PromptService } from '../../services/ai/prompt.service.js';
 
@@ -42,14 +43,29 @@ export class AiChatService {
         answer: parsedJson.answer || 'I am ready to help! Could you ask your question again?',
       };
     } catch (err) {
+      logger.error(`AiChatService resolveQuery failed: ${err.message}`);
+
+      // If it's a known API error, propagate it
+      if (err.status || err.statusCode || err.message.includes('40')) {
+        return {
+          answer: `AI Service Error: ${err.message}. Please check your API keys and model deployment names.`,
+        };
+      }
+
       // Fallback to plain text generation if JSON parsing fails
-      const text = await this.ai.generateText(prompt, {
-        temperature: 0.3,
-        imageBase64: screenshot,
-      });
-      return {
-        answer: text.trim(),
-      };
+      try {
+        const text = await this.ai.generateText(prompt, {
+          temperature: 0.3,
+          imageBase64: screenshot,
+        });
+        return {
+          answer: text.trim(),
+        };
+      } catch (fallbackErr) {
+        return {
+          answer: `AI Chat Failed: ${fallbackErr.message}`,
+        };
+      }
     }
   }
 }

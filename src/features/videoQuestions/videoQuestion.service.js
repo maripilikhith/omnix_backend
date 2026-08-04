@@ -1,6 +1,7 @@
 import { getAIProvider } from '../../services/ai/index.js';
 import { PromptService } from '../../services/ai/prompt.service.js';
 import { VideoQuestionModel } from './videoQuestion.model.js';
+import { logger } from '../../utils/logger.js';
 
 function extractCleanFeedback(val) {
   if (!val) return 'Answer evaluated.';
@@ -125,11 +126,28 @@ Respond with a JSON object:
         explanation: String(parsedJson.explanation || ''),
       };
     } catch (err) {
+      logger.error(`VideoQuestionService evaluation failed: ${err.message}`);
+      
+      // If it's a known AI provider error (e.g., 404 Model Not Found, 401 Unauthorized), return it explicitly
+      if (err.status || err.statusCode || err.message.includes('40')) {
+        return {
+          output: `AI Service Error: ${err.message}. Please check your API keys and model deployment names.`,
+          isCorrect: false,
+        };
+      }
+      
       // If AI fails to return clean JSON, fall back to text generation
-      const text = await this.ai.generateText(finalPrompt, { temperature: 0.2 });
-      return {
-        output: extractCleanFeedback(text),
-      };
+      try {
+        const text = await this.ai.generateText(finalPrompt, { temperature: 0.2 });
+        return {
+          output: extractCleanFeedback(text),
+        };
+      } catch (fallbackErr) {
+        return {
+          output: `AI Evaluation Failed: ${fallbackErr.message}`,
+          isCorrect: false,
+        };
+      }
     }
   }
 
