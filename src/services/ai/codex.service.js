@@ -82,13 +82,8 @@ export class CodexProvider extends AIProvider {
       });
       return response.choices[0]?.message?.content || '';
     } catch (err) {
-      if (this.disableFallback) {
-        logger.error(`Codex generateText failed: ${err.message}`);
-        throw err;
-      }
-      logger.warn(`Codex generateText failed (${err.message}), falling back to Gemini...`);
-      const gemini = getAIProvider('gemini');
-      return gemini.generateText(prompt, options);
+      logger.error(`Codex generateText failed: ${err.message}`);
+      throw err;
     }
   }
 
@@ -105,13 +100,8 @@ export class CodexProvider extends AIProvider {
       const content = response.choices[0]?.message?.content || '{}';
       return JSON.parse(content);
     } catch (err) {
-      if (this.disableFallback) {
-        logger.error(`Codex generateJSON failed: ${err.message}`);
-        throw err;
-      }
-      logger.warn(`Codex generateJSON failed (${err.message}), falling back to Gemini...`);
-      const gemini = getAIProvider('gemini');
-      return gemini.generateJSON(prompt, schema, options);
+      logger.error(`Codex generateJSON failed: ${err.message}`);
+      throw err;
     }
   }
 
@@ -124,13 +114,8 @@ export class CodexProvider extends AIProvider {
       });
       return response.data[0].embedding;
     } catch (err) {
-      if (this.disableFallback) {
-        logger.error(`Codex generateEmbedding failed: ${err.message}`);
-        throw err;
-      }
-      logger.warn(`Codex generateEmbedding failed (${err.message}), falling back to Gemini...`);
-      const gemini = getAIProvider('gemini');
-      return gemini.generateEmbedding(text);
+      logger.error(`Codex generateEmbedding failed: ${err.message}`);
+      throw err;
     }
   }
 }
