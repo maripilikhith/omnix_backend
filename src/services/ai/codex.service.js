@@ -77,7 +77,7 @@ export class CodexProvider extends AIProvider {
       const response = await client.chat.completions.create({
         model: options.model || this.model,
         messages: this._formatUserMessage(prompt, options),
-        max_tokens: options.maxTokens || this.maxTokens,
+        max_completion_tokens: options.maxTokens || this.maxTokens,
         temperature: options.temperature ?? this.temperature,
       });
       return response.choices[0]?.message?.content || '';
@@ -98,7 +98,7 @@ export class CodexProvider extends AIProvider {
       const response = await client.chat.completions.create({
         model: options.model || this.model,
         messages: this._formatUserMessage(prompt, options),
-        max_tokens: options.maxTokens || this.maxTokens,
+        max_completion_tokens: options.maxTokens || this.maxTokens,
         temperature: options.temperature ?? this.temperature,
         response_format: { type: 'json_object' },
       });
