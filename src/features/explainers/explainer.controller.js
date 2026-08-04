@@ -12,7 +12,6 @@ export const explainerController = {
     return ApiResponse.created(res, explainer);
   }),
   update: catchAsync(async (req, res) => {
-    console.log("PUT /explainers/:id payload interactiveQuestions:", req.body.interactiveQuestions);
     const explainer = await explainerService.updateExplainer(req.params.id, req.body);
     return ApiResponse.success(res, explainer);
   }),
@@ -31,7 +30,6 @@ export const explainerController = {
     return ApiResponse.raw(res, explainer, 201);
   }),
   legacyUpdate: catchAsync(async (req, res) => {
-    console.log("PUT /explainers/:id payload interactiveQuestions:", req.body.interactiveQuestions);
     const explainer = await explainerService.updateExplainer(req.params.id, req.body);
     return ApiResponse.raw(res, explainer);
   }),

@@ -1,6 +1,7 @@
 import { gameService } from './game.service.js';
 import { ApiResponse } from '../../utils/ApiResponse.js';
 import { HTTP_STATUS } from '../../constants/index.js';
+import { logger } from '../../utils/logger.js';
 
 // ─── Private Helpers ──────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ export const gameController = {
       res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
       res.send(audioBuffer);
     } catch (err) {
-      console.error('[TTS Proxy Error]:', err.message);
+      logger.error('TTS Proxy Error', { error: err.message });
       res.status(503).json({ error: err.message });
     }
   },
@@ -109,7 +110,7 @@ export const gameController = {
       const data = await gameService.issueSpeechToken();
       return ApiResponse.success(res, data);
     } catch (err) {
-      console.error('[Speech Token Error]:', err.message);
+      logger.error('Speech Token Error', { error: err.message });
       return res.status(503).json({ error: err.message });
     }
   },

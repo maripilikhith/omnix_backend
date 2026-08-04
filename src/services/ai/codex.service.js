@@ -4,7 +4,8 @@ import { logger } from '../../utils/logger.js';
 import { getAIProvider } from './ai.factory.js';
 
 /**
- * Codex / OpenAI-compatible provider implementation with automatic Gemini fallback.
+ * Codex / OpenAI-compatible provider implementation with optional Gemini fallback.
+ * Set DISABLE_GEMINI_FALLBACK=false in env to enable automatic fallback to Gemini.
  */
 export class CodexProvider extends AIProvider {
   constructor() {
@@ -16,6 +17,8 @@ export class CodexProvider extends AIProvider {
     this.maxTokens = config.ai.codex?.maxTokens || 4096;
     this.temperature = config.ai.codex?.temperature ?? 0.7;
     this.client = null;
+    // Gemini fallback is DISABLED by default. Set DISABLE_GEMINI_FALLBACK=false to enable.
+    this.disableFallback = (process.env.DISABLE_GEMINI_FALLBACK ?? 'true') !== 'false';
   }
 
   async _getClient() {
@@ -79,6 +82,10 @@ export class CodexProvider extends AIProvider {
       });
       return response.choices[0]?.message?.content || '';
     } catch (err) {
+      if (this.disableFallback) {
+        logger.error(`Codex generateText failed: ${err.message}`);
+        throw err;
+      }
       logger.warn(`Codex generateText failed (${err.message}), falling back to Gemini...`);
       const gemini = getAIProvider('gemini');
       return gemini.generateText(prompt, options);
@@ -98,6 +105,10 @@ export class CodexProvider extends AIProvider {
       const content = response.choices[0]?.message?.content || '{}';
       return JSON.parse(content);
     } catch (err) {
+      if (this.disableFallback) {
+        logger.error(`Codex generateJSON failed: ${err.message}`);
+        throw err;
+      }
       logger.warn(`Codex generateJSON failed (${err.message}), falling back to Gemini...`);
       const gemini = getAIProvider('gemini');
       return gemini.generateJSON(prompt, schema, options);
@@ -113,9 +124,14 @@ export class CodexProvider extends AIProvider {
       });
       return response.data[0].embedding;
     } catch (err) {
+      if (this.disableFallback) {
+        logger.error(`Codex generateEmbedding failed: ${err.message}`);
+        throw err;
+      }
       logger.warn(`Codex generateEmbedding failed (${err.message}), falling back to Gemini...`);
       const gemini = getAIProvider('gemini');
       return gemini.generateEmbedding(text);
     }
   }
 }
+

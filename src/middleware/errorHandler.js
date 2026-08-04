@@ -9,7 +9,7 @@ import config from '../config/index.js';
  *
  * Must be registered LAST in the middleware chain.
  */
-export const errorHandler = (err, _req, res, _next) => {
+export const errorHandler = (err, req, res, _next) => {
   // Default to 500 if no status code is set
   let statusCode = err.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   let message = err.message || 'Internal Server Error';
@@ -75,7 +75,7 @@ export const errorHandler = (err, _req, res, _next) => {
       statusCode,
       ...(errors.length > 0 && { errors }),
       // Include request ID so users can report it to support
-      requestId: _req.requestId,
+      requestId: req.requestId,
       // Include stack trace only in development
       ...(config.app.isDev && err.stack && { stack: err.stack }),
     },
