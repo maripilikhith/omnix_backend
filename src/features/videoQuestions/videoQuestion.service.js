@@ -2,6 +2,27 @@ import { getAIProvider } from '../../services/ai/index.js';
 import { PromptService } from '../../services/ai/prompt.service.js';
 import { VideoQuestionModel } from './videoQuestion.model.js';
 
+function extractCleanFeedback(val) {
+  if (!val) return 'Answer evaluated.';
+  let str = typeof val === 'string' ? val.trim() : JSON.stringify(val);
+  str = str.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  if (str.startsWith('{') && str.endsWith('}')) {
+    try {
+      const obj = JSON.parse(str);
+      if (obj.output) return extractCleanFeedback(obj.output);
+      if (obj.feedback) return extractCleanFeedback(obj.feedback);
+      if (obj.message) return extractCleanFeedback(obj.message);
+      if (obj.text) return extractCleanFeedback(obj.text);
+    } catch (e) {
+      const match = str.match(/"(?:output|feedback|message|text)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/i);
+      if (match && match[1]) {
+        return match[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+      }
+    }
+  }
+  return str;
+}
+
 export class VideoQuestionService {
   constructor() {
     this.ai = getAIProvider();
@@ -85,7 +106,7 @@ Respond with a JSON object:
       }
 
       // Deduplicate any repeated sentences or double answers at the end
-      const rawString = String(outputText || 'Answer evaluated.');
+      const rawString = extractCleanFeedback(outputText || 'Answer evaluated.');
       const sentences = rawString.split(/(?<=[.!?])\s+/);
       const uniqueSentences = [];
       for (const s of sentences) {
@@ -107,7 +128,7 @@ Respond with a JSON object:
       // If AI fails to return clean JSON, fall back to text generation
       const text = await this.ai.generateText(finalPrompt, { temperature: 0.2 });
       return {
-        output: String(text).trim(),
+        output: extractCleanFeedback(text),
       };
     }
   }
