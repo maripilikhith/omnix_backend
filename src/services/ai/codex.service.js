@@ -17,8 +17,8 @@ export class CodexProvider extends AIProvider {
     this.maxTokens = config.ai.codex?.maxTokens || 4096;
     this.temperature = config.ai.codex?.temperature ?? 0.7;
     this.client = null;
-    // Gemini fallback is DISABLED by default. Set DISABLE_GEMINI_FALLBACK=false to enable.
-    this.disableFallback = (process.env.DISABLE_GEMINI_FALLBACK ?? 'true') !== 'false';
+    // Gemini fallback is ENABLED by default for the demo. Set DISABLE_GEMINI_FALLBACK=true to disable it.
+    this.disableFallback = process.env.DISABLE_GEMINI_FALLBACK === 'true';
   }
 
   async _getClient() {
